@@ -4,13 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.ConfigMappingWithKeysTest.AdditionalKeys.KeysProvider;
+import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.common.MapBackedConfigSource;
 
 class ConfigMappingWithKeysTest {
@@ -297,6 +301,57 @@ class ConfigMappingWithKeysTest {
             @Override
             public Iterable<String> get() {
                 return List.of("one");
+            }
+        }
+    }
+
+    @Test
+    void envKeys() {
+        SmallRyeConfig originalConfig = new SmallRyeConfigBuilder()
+                .withSources(new EnvConfigSource(Map.of("ENV_MAP_DASHED_KEY", "value"), 300))
+                .withMappingIgnore("env.**")
+                .build();
+
+        ConfigMappings.registerConfigMappings(originalConfig, Set.of(ConfigClass.configClass(EnvKeys.class)));
+        Map<String, String> map = originalConfig.getConfigMapping(EnvKeys.class).map();
+        assertEquals("value", map.get("dashed-key"));
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .withSources(new ConfigSource() {
+                    @Override
+                    public Set<String> getPropertyNames() {
+                        Set<String> properties = new HashSet<>();
+                        originalConfig.getPropertyNames().forEach(properties::add);
+                        return properties;
+                    }
+
+                    @Override
+                    public String getValue(final String propertyName) {
+                        return originalConfig.getConfigValue(propertyName).getValue();
+                    }
+
+                    @Override
+                    public String getName() {
+                        return "Original Config";
+                    }
+                })
+                .withMappingIgnore("env.**")
+                .withMapping(EnvKeys.class)
+                .build();
+
+        EnvKeys mapping = config.getConfigMapping(EnvKeys.class);
+        assertEquals("value", mapping.map().get("dashed-key"));
+    }
+
+    @ConfigMapping(prefix = "env")
+    interface EnvKeys {
+        @WithKeys(KeysProvider.class)
+        Map<String, String> map();
+
+        class KeysProvider implements Supplier<Iterable<String>> {
+            @Override
+            public Iterable<String> get() {
+                return List.of("dashed-key");
             }
         }
     }
