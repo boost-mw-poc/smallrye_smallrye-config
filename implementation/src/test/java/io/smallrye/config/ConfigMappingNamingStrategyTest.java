@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.junit.jupiter.api.Test;
 
 public class ConfigMappingNamingStrategyTest {
@@ -141,40 +140,6 @@ public class ConfigMappingNamingStrategyTest {
 
         interface Appender {
             String logName();
-        }
-    }
-
-    @Test
-    void interfaceAndClass() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .withMapping(ConfigMappingNamingKebab.class)
-                .withMapping(ConfigPropertiesNamingVerbatim.class)
-                .withSources(config("server.theHost", "localhost"))
-                .withSources(config("server.the-host", "localhost", "server.form.login-page", "login"))
-                .build();
-
-        ConfigPropertiesNamingVerbatim configProperties = config.getConfigMapping(ConfigPropertiesNamingVerbatim.class);
-        assertEquals("localhost", configProperties.theHost);
-
-        ConfigMappingNamingKebab configMapping = config.getConfigMapping(ConfigMappingNamingKebab.class);
-        assertEquals("localhost", configMapping.theHost());
-        assertEquals("login", configMapping.form().get("form").loginPage());
-    }
-
-    @ConfigProperties(prefix = "server")
-    static class ConfigPropertiesNamingVerbatim {
-        String theHost;
-    }
-
-    @ConfigMapping(prefix = "server")
-    interface ConfigMappingNamingKebab {
-        String theHost();
-
-        @WithParentName
-        Map<String, Form> form();
-
-        interface Form {
-            String loginPage();
         }
     }
 
@@ -373,5 +338,4 @@ public class ConfigMappingNamingStrategyTest {
             String getValue();
         }
     }
-
 }

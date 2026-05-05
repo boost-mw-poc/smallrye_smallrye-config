@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.inject.ConfigProperties;
 import org.junit.jupiter.api.Test;
 
 class ConfigMappingLoaderTest {
@@ -59,7 +58,6 @@ class ConfigMappingLoaderTest {
         assertInstanceOf(Server.class, ensureLoaded(Server.class).implementation().getDeclaredConstructor().newInstance());
         assertInstanceOf(ServerNested.class,
                 ensureLoaded(ServerNested.class).implementation().getDeclaredConstructor().newInstance());
-        assertThrows(IllegalArgumentException.class, () -> ensureLoaded(ServerProperties.class));
     }
 
     @ConfigMapping(prefix = "server")
@@ -67,13 +65,6 @@ class ConfigMappingLoaderTest {
         String host();
 
         int port();
-    }
-
-    @ConfigProperties(prefix = "server")
-    public static class ServerProperties {
-        String host;
-
-        int port;
     }
 
     interface ServerManual {
